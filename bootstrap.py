@@ -12,10 +12,11 @@ from plot_util import plot_files
 SUDO_PASSWD = "sasomi"
 OUTPUT_PREFIX = "/home/supermt/rocksdb_nvme"
 DEFAULT_DB_PATH = "/media/supermt/hdd/rocksdb"
+DEFAULT_BLOOM_BITS = 10
 
 
 def start_db_bench(key_size, value_size, entry_count, compression="none", db_bench_path=DEFAULT_DB_PATH,
-                   db_path=DEFAULT_DB_PATH):
+                   db_path=DEFAULT_DB_PATH, bloom_bits=DEFAULT_BLOOM_BITS):
     """
     Starting the db_bench thread by subprocess.popen(), return the Popen object
     ./db_bench --benchmarks="fillrandom" --key_size=16 --value_size=1024 --db="/media/supermt/hdd/rocksdb"
@@ -24,7 +25,8 @@ def start_db_bench(key_size, value_size, entry_count, compression="none", db_ben
         print("DB_BENCH starting, with parameters:")
         parameter_list = [db_bench_path + '/db_bench', '--benchmarks=fillrandom', '--num=' + str(entry_count),
                           '--key_size=' + str(key_size),
-                          '--value_size=' + str(value_size), '--db=' + db_path, '--compression_type=' + compression]
+                          '--value_size=' + str(value_size), '--db=' + db_path, '--compression_type=' + compression,
+                          '--bloom_bits=' + str(bloom_bits)]
         print(parameter_list)
         db_bench_process = subprocess.Popen(
             parameter_list, stdout=out, stderr=err)
@@ -102,11 +104,11 @@ def single_run(key_size, value_size, entry_count, gap, db_path):
 
 if __name__ == "__main__":
 
-    TARGET_DB_SIZE = 40000000000  # 40 GB
+    TARGET_DB_SIZE = 20000000000  # 20 GB
     # NoveLSM 16GB, quite small, 2000000000 to 8000000000 entries
 
-    key_size_options = [8, 64]
-    value_size_options = [65536, 4096, 512, 16]
+    key_size_options = [8, 64]  # 10 bits per filter
+    value_size_options = [4096, 512, 16]  # block size, 1/8 block size 1/2^6 block size
     for key_size_option in key_size_options:
 
         for value_size_option in value_size_options:
