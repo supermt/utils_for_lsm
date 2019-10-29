@@ -1,0 +1,21 @@
+Cannot parse compression type '/media/supermt/hdd/rocksdb'
+Initializing RocksDB Options from the specified file
+Initializing RocksDB Options from command-line flags
+Keys:       64 bytes each
+Values:     512 bytes each (256 bytes after compression)
+Entries:    781250
+Prefix:    0 bytes
+Keys per prefix:    0
+RawSize:    429.2 MB (estimated)
+FileSize:   238.4 MB (estimated)
+Write rate: 0 bytes/second
+Read rate: 0 ops/second
+Compression: Snappy
+Compression sampling rate: 0
+Memtablerep: skip_list
+Perf Level: 1
+------------------------------------------------
+Initializing RocksDB Options from the specified file
+Initializing RocksDB Options from command-line flags
+DB path: [/media/supermt/hdd/rocksdb]
+fillrandom   :       7.187 micros/op 139140 ops/sec;   76.4 MB/s

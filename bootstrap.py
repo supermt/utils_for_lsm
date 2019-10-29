@@ -10,7 +10,7 @@ import psutil
 from plot_util import plot_files
 
 SUDO_PASSWD = "sasomi"
-OUTPUT_PREFIX = "/home/supermt/rocksdb_nvme"
+OUTPUT_PREFIX = "/home/supermt/PycharmProjects/utils_for_lsm"
 DEFAULT_DB_PATH = "/media/supermt/hdd/rocksdb"
 DEFAULT_BLOOM_BITS = 10
 
@@ -21,7 +21,10 @@ def start_db_bench(key_size, value_size, entry_count, compression="none", db_ben
     Starting the db_bench thread by subprocess.popen(), return the Popen object
     ./db_bench --benchmarks="fillrandom" --key_size=16 --value_size=1024 --db="/media/supermt/hdd/rocksdb"
     """
-    with open("stdout.txt", "wb") as out, open("stderr.txt", "wb") as err:
+    db_bench_path = os.path.abspath(db_bench_path)
+    db_path = os.path.abspath(db_path)
+
+    with open(db_path + "/stdout.txt", "wb") as out, open(db_path + "/stderr.txt", "wb") as err:
         print("DB_BENCH starting, with parameters:")
         parameter_list = [db_bench_path + '/db_bench', '--benchmarks=fillrandom', '--num=' + str(entry_count),
                           '--key_size=' + str(key_size),
@@ -67,7 +70,7 @@ def copy_current_data(src_dir, dst_dir, timestamp, file_names=["MEMORY_USAGE0"])
     return
 
 
-def single_run(key_size, value_size, entry_count, gap, db_path):
+def single_run(key_size, value_size, entry_count, gap, db_path, db_bench_path):
     """
     key size: the size of entry keys
     value size: the size of entry values
@@ -78,7 +81,7 @@ def single_run(key_size, value_size, entry_count, gap, db_path):
     try:
         timestamp = 0
         db_bench_process = start_db_bench(
-            key_size, value_size, entry_count, db_path, db_path)  # use db_path as default place
+            key_size, value_size, entry_count, db_path, db_bench_path)  # use db_path as default place
         result_dir = para_to_dir(key_size, value_size, entry_count)
         create_target_dir(result_dir)
         while True:
@@ -86,13 +89,11 @@ def single_run(key_size, value_size, entry_count, gap, db_path):
                 db_bench_process.wait(gap)
                 print("mission complete")
                 # copy the results
-                copy_current_data(db_path, result_dir, timestamp, [
-                    "MEMORY_USAGE0", "stderr.txt", "stdout.txt", "LOG"])
+                copy_current_data(db_bench_path, result_dir, timestamp, ["MEMORY_USAGE0"])
+                copy_current_data(db_path, result_dir, timestamp, ["stderr.txt", "stdout.txt", "LOG"])
                 break
             except subprocess.TimeoutExpired:
                 timestamp = timestamp + gap
-                # copy the current memory footprint
-                # copy_current_data(db_path, result_dir, timestamp)
                 pass
         return result_dir
     except Exception:
@@ -102,20 +103,26 @@ def single_run(key_size, value_size, entry_count, gap, db_path):
         return result_dir
 
 
+def size_to_num(size, unit):
+    return size * 100000000
+
+
 if __name__ == "__main__":
 
-    TARGET_DB_SIZE = 20000000000  # 20 GB
+    TARGET_DB_SIZE = 4
+    TARGET_DB_UNIT = "GB"
+    TARGET_DB_SIZE_num = size_to_num(TARGET_DB_SIZE, TARGET_DB_UNIT)  # 20 GB
     # NoveLSM 16GB, quite small, 2000000000 to 8000000000 entries
+
+    OUTPUT_PREFIX += "/" + str(TARGET_DB_SIZE) + TARGET_DB_UNIT + "_DB_RESULT"
 
     key_size_options = [8, 64]  # 10 bits per filter
     value_size_options = [4096, 512, 16]  # block size, 1/8 block size 1/2^6 block size
     for key_size_option in key_size_options:
-
         for value_size_option in value_size_options:
-            entries = int(TARGET_DB_SIZE / value_size_option)
-
+            entries = int(TARGET_DB_SIZE_num / value_size_option)
             result_dir = single_run(key_size_option, value_size_option,
-                                    entries, 1.5, db_path=DEFAULT_DB_PATH)
+                                    entries, 1.5, db_path=DEFAULT_DB_PATH, db_bench_path="./")
 
             plot_files(result_dir, result_dir, column=2, row=2)
             print("finish experiment with value size of " +
