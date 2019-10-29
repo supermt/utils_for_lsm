@@ -47,7 +47,7 @@ def plot_file_with_index(axe, file):
     index_size_line, = axe.plot(xs, index_size, "r", label="index_size")
     memtable_size_line, = axe.plot(xs, memtable_size, "g", label="memtable_size")
     # axe.plot(xs,sst_size,"b",label="sst_size")
-    axe.set_title(str(xs[-1]) + "ops")
+    axe.set_title(file.split("/")[-2])
     ratio_axe = axe.twinx()
     index_ratio_line, = ratio_axe.plot(xs, index_ratio, label="index_size / sst_size")
     # ratio_axe.legend()
