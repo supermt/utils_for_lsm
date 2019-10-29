@@ -1,7 +1,12 @@
-import matplotlib.pyplot as plt
 import os
 
+import matplotlib.pyplot as plt
+
 DEFAULT_IMAGE = "result.png"
+
+
+def check_header(line):
+    return line.split(",")[0].isdigit()
 
 
 def extract_index(input_file):
@@ -9,7 +14,7 @@ def extract_index(input_file):
     line = input_file.readline()
     while line:
         line = input_file.readline()
-        if (line.split(",")[0].isdigit()):
+        if (check_header(line)):
             xs.append(int(line.split(",")[0]))
     return xs
 
@@ -24,10 +29,10 @@ def plot_file_with_index(axe, file):
 
     index = extract_index(input_file)
 
-    input_file = open(file, "r")
+    input_file.seek(0)
     for op_seq in index:
         line = input_file.readline()
-        if (line.split(",")[0].isdigit()):
+        if (check_header((line))):
             xs.append(op_seq)
             data_row = line.split(",")
             index_size.append(int(data_row[1]))
@@ -36,111 +41,76 @@ def plot_file_with_index(axe, file):
             if float(data_row[3]) == 0:
                 index_ratio.append(0)
             else:
-                index_ratio.append(float(data_row[1])/float(data_row[3]))
+                index_ratio.append(float(data_row[1]) / float(data_row[3]))
         else:
             pass
-    axe.plot(xs, index_size, "r", label="index_size")
-    axe.plot(xs, memtable_size, "g", label="memtable_size")
+    index_size_line, = axe.plot(xs, index_size, "r", label="index_size")
+    memtable_size_line, = axe.plot(xs, memtable_size, "g", label="memtable_size")
     # axe.plot(xs,sst_size,"b",label="sst_size")
     axe.set_title(str(xs[-1]) + "ops")
     ratio_axe = axe.twinx()
-    ratio_axe.plot(xs, index_ratio, label="index_size / sst_size")
-    ratio_axe.legend()
-    axe.legend()
-
-# def plot_file_with_index_total(axe,file):
-#     input_file = open(file,"r")
-#     xs = []
-#     index_size = []
-#     memtable_size = []
-#     sst_size = []
-#     index_ratio = []
-
-#     index = extract_index(input_file)
-
-#     input_file = open(file,"r")
-#     for op_seq in index:
-#         line = input_file.readline()
-#         if (line.split(",")[0].isdigit()):
-#             xs.append(op_seq)
-#             data_row = line.split(",")
-#             index_size.append(int(data_row[1]))
-#             memtable_size.append(int(data_row[2]))
-#             sst_size.append(int(data_row[3]))
-#             if float(data_row[3]) == 0:
-#                 index_ratio.append(0)
-#             else:
-#                 index_ratio.append(float(data_row[1])/float(data_row[3]))
-#         else:
-#            pass
-#     axe.plot(xs,index_size,"r",label="index_size")
-#     axe.plot(xs,memtable_size,"g",label="memtable_size")
-#     axe.plot(xs,sst_size,"b",label="sst_size")
-#     axe.set_title(file + " with total sst size")
-#     ratio_axe = axe.twinx()
-#     ratio_axe.plot(xs,index_ratio,label="index_size / sst_size")
-#     ratio_axe.legend()
-#     axe.legend()
+    index_ratio_line, = ratio_axe.plot(xs, index_ratio, label="index_size / sst_size")
+    # ratio_axe.legend()
+    # axe.legend()
+    return index_size_line, memtable_size_line, index_ratio_line
 
 
-def result_image_path(OUTPUT_DIR, Sequence=0):
-    if OUTPUT_DIR[-1] != "/":
-        OUTPUT_DIR = OUTPUT_DIR + "/"
-    return OUTPUT_DIR + str(Sequence) + "_" + DEFAULT_IMAGE
+def result_image_path(output_dir, sequence=0):
+    if output_dir[-1] != "/":
+        output_dir = output_dir + "/"
+    return output_dir + str(sequence) + "_" + DEFAULT_IMAGE
 
 
-def draw_frame(column, row, sequence, OUTPUT_DIR, files, start_point):
+def draw_frame(column, row, sequence, output_dir, files, start_point):
     fig = plt.figure(figsize=(16, 12))
-    axes = fig.subplots(row, column, sharex=True, sharey=True)
+    axes = fig.subplots(row, column, sharex='none', sharey='row')
     fig.text(0.5, 0.04, 'Entry Sequence', ha='center')
     fig.text(0.04, 0.5, 'Memory Usage (Bytes)',
              va='center', rotation="90")
     file_index = start_point
-
+    label_infors = ("index_size", "memtable_size", "index_size / sst_size")
     for axes_row in axes:
         for axe in axes_row:
-            plot_file_with_index(axe, files[file_index])
+            label_lines = plot_file_with_index(axe, files[file_index])
             file_index += 1
             if file_index >= len(files):
                 break
-
-    plt.savefig(result_image_path(OUTPUT_DIR, sequence))
+    save_path = result_image_path(output_dir, sequence)
+    fig.legend(label_lines, label_infors)
+    plt.savefig(save_path)
     plt.close()
+    return save_path
 
 
-def getfiles(dirpath):
-    files = [s for s in os.listdir(dirpath)
-             if os.path.isfile(os.path.join(dirpath, s))]
-    files.sort(key=lambda s: os.path.getmtime(os.path.join(dirpath, s)))
+def get_files(dir_path):
+    files = [s for s in os.listdir(dir_path)
+             if os.path.isfile(os.path.join(dir_path, s))]
+    files.sort(key=lambda s: os.path.getmtime(os.path.join(dir_path, s)))
     return files
 
 
-def plot_files(FILE_DIR, OUTPUT_DIR, column=2, row=2):
-    files = []
-    if FILE_DIR[-1] != "/":
-        FILE_DIR = FILE_DIR + "/"
+def plot_file_list_ratio(files, output_dir, column, row):
+    output_dir = os.path.abspath(output_dir)
+    array_size = len(files)
 
-    for file in getfiles(FILE_DIR):
-        if "MEMORY_USAGE" in file:
-            files.append(FILE_DIR + file)
-    print(files)
-    if (len(files) < 1):
+    if array_size < 1:
         raise Exception("no file need plotting")
-
-    if (len(files) < 2):
+    if array_size < 2:
         fig = plt.figure(figsize=(16, 12))
         plot_file_with_index(fig.subplots(1, 1), files[0])
-        # print("saving the image at: " + result_image_path(OUTPUT_DIR, 0))
-        plt.savefig(result_image_path(OUTPUT_DIR, 0))
-        return
+        fig.legend()
+        plt.savefig(result_image_path(output_dir, 0))
+        return output_dir
 
-    row_in_total = len(files) / column
+    row_in_total = array_size / column
     frames = int(row_in_total / row)
     frame = 0
     start_point = 0
+    result_files = []
+    # print(frames)
     # files in frame
-    while frame < frames:
-        draw_frame(column, row, frame, OUTPUT_DIR, files, start_point)
+    while frame < max(frames, 1):
+        result_files.append(draw_frame(column, row, frame, output_dir, files, start_point))
         start_point += (column * row)
         frame += 1
     # files at tail
@@ -148,7 +118,23 @@ def plot_files(FILE_DIR, OUTPUT_DIR, column=2, row=2):
     while start_point < len(files):
         fig = plt.figure(figsize=(16, 12))
         plot_file_with_index(fig.subplots(1, 1), files[start_point])
-        plt.savefig(result_image_path(OUTPUT_DIR, frame))
+        save_path = result_image_path(output_dir, frame)
+        plt.legend()
+        plt.savefig(save_path)
+        result_files.append(save_path)
         frame += 1
         start_point += 1
         plt.close()
+
+    return result_files
+
+
+def plot_files(file_dir, output_dir, column=2, row=2):
+    files = []
+    file_dir = os.path.abspath(file_dir)
+
+    for file in get_files(file_dir):
+        if "MEMORY_USAGE" in file:
+            files.append(file_dir + file)
+
+    plot_file_list_ratio(files, output_dir, column, row)
