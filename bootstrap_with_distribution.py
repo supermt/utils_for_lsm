@@ -109,7 +109,7 @@ def size_to_num(size, unit):
 
 if __name__ == "__main__":
 
-    TARGET_DB_SIZE = 40
+    TARGET_DB_SIZE = 256
     TARGET_DB_UNIT = "GB"
     TARGET_DB_SIZE_num = size_to_num(TARGET_DB_SIZE, TARGET_DB_UNIT)  # 20 GB
     # NoveLSM 16GB, quite small, 2000000000 to 8000000000 entries
