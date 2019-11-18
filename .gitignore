@@ -1,8 +1,8 @@
 *ldb
 *sst
 db_bench
-MEMORY_USAGE-1
-MEMORY_USAGE0
+MEMORY_USAGE*
 stderr.txt
 stdout.txt
 sst_dump
+**/*LOG*
