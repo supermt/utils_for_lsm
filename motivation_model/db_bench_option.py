@@ -44,20 +44,20 @@ parameter_list = {
     "max_write_buffer_number": DEFAULT_IMMU_COUNT,
     "level0_file_num_compaction_trigger": DEFAULT_COMPACTION_TRIGGER,
     "max_background_compactions": DEFAULT_COMPACTION_WORKER,
-    "max_background_flushes=": 1,  # we are focus on single material environment
-    "thread": 1,  # control the input pressure, increase all resource requirement
+    "max_background_flushes": 1,  # we are focus on single material environment
+    "threads": 1,  # control the input pressure, increase all resource requirement
     "bloom_bits": str(DEFAULT_BLOOM_BIT),
     "compression_type": DEFAULT_COMPRESSION,
 }
 
 
-def parameter_tuning(db_bench_dir, para_dic={}):
+def parameter_tuning(db_bench, para_dic={}):
     """
     tuning the parameter, set the default value
     """
-    if db_bench_dir == "":
-        db_bench_dir = DEFAULT_DB_PATH + "/db_bench"
-    filled_para_list = [db_bench_dir]
+    if db_bench == "":
+        db_bench = DEFAULT_DB_BENCH
+    filled_para_list = [db_bench]
 
     # use para_dic to modify the default parameter
     for para in para_dic:
@@ -69,7 +69,7 @@ def parameter_tuning(db_bench_dir, para_dic={}):
 
     parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"]) * int(
         parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
-    parameter_list["num"] = str(DEFAULT_DB_SIZE / int(parameter_list["value_size"]))
+    parameter_list["num"] = str(int(DEFAULT_DB_SIZE / int(parameter_list["value_size"])))
 
     for parameter in parameter_list:
         filled_para = "--" + parameter + "=" + str(parameter_list[parameter])
