@@ -4,6 +4,7 @@ import os
 import pathlib
 import subprocess
 from shutil import copyfile
+from shutil import rmtree
 
 import psutil
 
@@ -11,7 +12,7 @@ from plot_util import plot_files
 
 SUDO_PASSWD = "sasomi"
 OUTPUT_PREFIX = "/home/supermt/PycharmProjects/utils_for_lsm/thread_influence"
-DEFAULT_DB_PATH = "/media/supermt/hdd/rocksdb"
+DEFAULT_DB_PATH = "/home/supermt/rockdb_ssd"
 DEFAULT_BLOOM_BITS = 10
 
 
@@ -30,7 +31,9 @@ def start_db_bench(key_size, value_size, entry_count, bench_mark, threads, compr
         parameter_list = [db_bench_path + '/db_bench', '--benchmarks=' + bench_mark, '--num=' + str(entry_count),
                           '--key_size=' + str(key_size),
                           '--value_size=' + str(value_size),
-                          '--threads=' + str(threads),
+                          '--threads=' + str(threads[0]),
+                          '--max_background_compactions=' + str(threads[1]),
+                          '--max_background_flushes=' + str(threads[1]),
                           '--db=' + db_path, '--compression_type=' + compression,
                           '--bloom_bits=' + str(bloom_bits)]
         print(parameter_list)
@@ -54,19 +57,18 @@ def para_to_dir(key_size, value_size, entry_count):
 
 
 def create_target_dir(target_path):
-    pathlib.Path(target_path).mkdir(parents=True, exist_ok=True)
-
+    try:
+        pathlib.Path(target_path).mkdir(parents=True, exist_ok=False)
+    except:
+        print("Path Exists, clearing the files")
+        rmtree(target_path)
+        pathlib.Path(target_path).mkdir(parents=True, exist_ok=False)
 
 def copy_current_data(src_dir, dst_dir, timestamp, file_names=["MEMORY_USAGE0"]):
     if src_dir[-1] != '/':
         src_dir = src_dir + "/"
     if dst_dir[-1] != '/':
         dst_dir = dst_dir + "/"
-    # if len(file_name) == 0 and file_name[0] == "MEMORY_USAGE0":
-    #     move(src_dir + file_name[0], dst_dir +
-    #          file_name[0] + "_" + str(timestamp))
-    #     return
-
     for file_name in file_names:
         copyfile(src_dir + file_name, dst_dir +
                  file_name + "_" + str(timestamp))
@@ -88,12 +90,18 @@ def single_run(key_size, value_size, entry_count, benchmark, thread_count, gap, 
             db_bench_path)  # use db_path as default place
         result_dir = para_to_dir(key_size, value_size, str(entry_count) + str(benchmark) + "*" + str(thread_count))
         create_target_dir(result_dir)
+
         while True:
             try:
                 db_bench_process.wait(gap)
                 print("mission complete")
                 # copy the results
-                copy_current_data(db_bench_path, result_dir, timestamp, ["MEMORY_USAGE0"])
+                # copy all memory usage files
+                memory_usage_files = []
+                for i in range(0,thread_count[0]):
+                    memory_usage_files.append("MEMORY_USAGE"+str(i))
+                print(memory_usage_files)
+                copy_current_data(db_bench_path, result_dir, timestamp, memory_usage_files)
                 copy_current_data(db_path, result_dir, timestamp, ["stderr.txt", "stdout.txt", "LOG"])
                 break
             except subprocess.TimeoutExpired:
@@ -112,20 +120,18 @@ def size_to_num(size, unit):
 
 
 if __name__ == "__main__":
-
-    TARGET_DB_SIZE = 60
+    TARGET_DB_SIZE = 25
     TARGET_DB_UNIT = "GB"
     TARGET_DB_SIZE_num = size_to_num(TARGET_DB_SIZE, TARGET_DB_UNIT)  # 20 GB
     # NoveLSM 16GB, quite small, 2000000000 to 8000000000 entries
 
     OUTPUT_PREFIX += "/" + str(TARGET_DB_SIZE) + TARGET_DB_UNIT + "_DB_RESULT"
 
-    benchmark_options = ["fillrandom", "fillpoisson", "fillnormal", "fillexp", "fillpoissonrd", "fillnormalrd",
-                         "fillexprd"]
+    benchmark_options = ["fillrandom"]
 
     key_size_options = [16]  # 10 bits per filter
     value_size_options = [1024]  # block size, 1/8 block size 1/2^6 block size
-    thread_counts = [1,4,8,16]
+    thread_counts = [(2,4),(2,2),(4,2)]
     for benchmark in benchmark_options:
         for key_size_option in key_size_options:
             for value_size_option in value_size_options:

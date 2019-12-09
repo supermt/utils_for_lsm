@@ -133,7 +133,7 @@ def plot_files(file_dir, output_dir, column=2, row=2):
     files = []
     file_dir = os.path.abspath(file_dir)
     for file in get_files(file_dir):
-        if "MEMORY_USAGE" in file:
+        if "MEMORY_USAGE0" in file:
             files.append(os.path.join(file_dir, file))
 
     plot_file_list_ratio(files, output_dir, column, row)
