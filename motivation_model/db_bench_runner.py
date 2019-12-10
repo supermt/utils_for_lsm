@@ -1,40 +1,56 @@
 import os
 import pathlib
 import subprocess
-from shutil import rmtree, copyfile
+from shutil import copyfile, rmtree
 
 import psutil
 
 from db_bench_option import *
 from db_bench_option import CPU_IN_TOTAL
+from db_bench_option import SUDO_PASSWD
 from parameter_generator import HardwareEnvironment
 
 
 def turn_on_cpu(id):
     # command = "echo 1 | sudo tee /sys/devices/system/cpu/cpu1/online"
-    os.system('echo %s | echo 1 | sudo tee /sys/devices/system/cpu/cpu%s/online' % (SUDO_PASSWD, id))
+    os.system(
+        "echo %s|sudo -S %s" % (SUDO_PASSWD, "echo 1 | sudo tee /sys/devices/system/cpu/cpu" + str(id) + "/online"))
 
 
 def turn_off_cpu(id):
     # command = "echo 1 | sudo tee /sys/devices/system/cpu/cpu1/online"
-    os.system('echo %s | echo 0 | sudo tee /sys/devices/system/cpu/cpu%s/online' % (SUDO_PASSWD, id))
+    os.system(
+        "echo %s|sudo -S %s" % (SUDO_PASSWD, "echo 0 | sudo tee /sys/devices/system/cpu/cpu" + str(id) + "/online"))
 
 
 def restrict_cpus(count):
     reset_CPUs()
+    count = int(count)
     if (count > CPU_IN_TOTAL):
         # too many cores asked
         print("no that many cpu cores")
         return
     else:
+        print("restricting the CPU cores")
+        print(count)
         for id in range(count, CPU_IN_TOTAL):
             turn_off_cpu(id)
+        print("finished")
 
 
 def reset_CPUs():
     for id in range(1, CPU_IN_TOTAL):
         turn_on_cpu(id)
     print("Reset all cpus")
+
+
+def create_db_path(db_path):
+    try:
+        pathlib.Path(db_path).mkdir(parents=True, exist_ok=False)
+    except Exception:
+        print("Path Exists, clearing the files")
+        rmtree(db_path)
+        pathlib.Path(db_path).mkdir(parents=True, exist_ok=False)
 
 
 def start_db_bench(db_bench_exec, db_path, options={}):
@@ -45,12 +61,13 @@ def start_db_bench(db_bench_exec, db_path, options={}):
     db_bench_path = os.path.abspath(db_bench_exec)
     db_path = os.path.abspath(db_path)
     options["db"] = db_path
+    create_target_dir(db_path)
     with open(db_path + "/stdout.txt", "wb") as out, open(db_path + "/stderr.txt", "wb") as err:
         print("DB_BENCH starting, with parameters:")
         db_bench_options = parameter_tuning(db_bench_exec, para_dic=options)
-        print(db_bench_options)
-        db_bench_process = subprocess.Popen(
-            db_bench_options, stdout=out, stderr=err)
+        # print(db_bench_options)
+        print(parameter_printer(db_bench_options))
+        db_bench_process = subprocess.Popen(db_bench_options, stdout=out, stderr=err)
         # in case there are too many opened files
         os.system('echo %s|sudo -S %s' % (SUDO_PASSWD, "prlimit --pid " +
                                           str(db_bench_process.pid) + " --nofile=20480:40960"))
@@ -64,46 +81,56 @@ def copy_current_data(src_dir, dst_dir, timestamp, file_names=["MEMORY_USAGE0"])
     if dst_dir[-1] != '/':
         dst_dir = dst_dir + "/"
     for file_name in file_names:
+        print("Copying", file_name)
         copyfile(src_dir + file_name, dst_dir +
                  file_name + "_" + str(timestamp))
     return
 
 
 def create_target_dir(target_path):
-    try:
-        pathlib.Path(target_path).mkdir(parents=True, exist_ok=False)
-    except:
-        print("Path Exists, clearing the files")
-        rmtree(target_path)
-        pathlib.Path(target_path).mkdir(parents=True, exist_ok=False)
+    # try:
+    pathlib.Path(target_path).mkdir(parents=True, exist_ok=True)
+    if len(os.listdir(target_path)) != 0:
+        print("existing files")
+        return True
+    else:
+        return False
+    # except:
+    #     print("Path Exists, clearing the files")
+    #     rmtree(target_path)
+    #     pathlib.Path(target_path).mkdir(parents=True, exist_ok=False)
 
 
 class DB_TASK:
     db_bench = ""
     result_dir = ""
     parameter_list = {}
+    cpu_cores = 1
 
-    def __init__(self, para_list, db_bench, result_dir):
+    def __init__(self, para_list, db_bench, result_dir, cpu_cores):
         self.parameter_list = para_list
         self.db_bench = db_bench
         self.result_dir = result_dir
+        self.cpu_cores = cpu_cores
 
     def run(self, gap=10):
-        # restrict_cpus(self.parameter_list["max_background_compactions"])
+        restrict_cpus(self.cpu_cores)
+        self.parameter_list["max_background_compactions"] = self.cpu_cores
         # detect running status every 'gap' second
         try:
             timer = 0
             db_bench_process = start_db_bench(self.db_bench, self.parameter_list["db"], self.parameter_list)
-            create_target_dir(self.result_dir)
+            print("Mission started, output is in:" + self.result_dir)
+            # create_target_dir(self.result_dir)
             while True:
                 try:
                     db_bench_process.wait(gap)
                     print("mission complete")
-                    memory_usage_files = []
-                    thread_count = self.parameter_list.get("threads",1)
-                    for i in range(0, thread_count):
-                        memory_usage_files.append("MEMORY_USAGE" + str(i))
-                    copy_current_data(self.db_bench.split("db_bench")[0], self.result_dir, timer, memory_usage_files)
+                    # memory_usage_files = []
+                    # thread_count = self.parameter_list.get("threads", 1)
+                    # for i in range(0, thread_count):
+                    #     memory_usage_files.append("MEMORY_USAGE" + str(i))
+                    # copy_current_data("./", self.result_dir, timer, memory_usage_files)
                     copy_current_data(self.parameter_list["db"], self.result_dir, timer,
                                       ["stderr.txt", "stdout.txt", "LOG"])
                     break
@@ -116,7 +143,7 @@ class DB_TASK:
             p.terminate()  # or p.kill()
             # clean the directory
             # create_target_dir(self.result_dir)
-            #restore all cpus
+            # restore all cpus
             reset_CPUs()
 
         # reset_CPUs()
@@ -162,10 +189,12 @@ class DB_launcher:
                 for memory_budget in env.get_current_memory_experiment_set():
                     temp_para_dict["write_buffer_size"] = memory_budget
                     target_dir = result_dir + "/" + str(int(memory_budget / 1024 / 1024)) + "MB"
-                    create_target_dir(target_dir)
-                    print(target_dir)
-                    self.db_bench_tasks.append(
-                        DB_TASK(temp_para_dict, DEFAULT_DB_BENCH, target_dir))
+                    if create_target_dir(target_dir):
+                        print(target_dir, "existing files")
+                    else:
+                        print("Task prepared\t", cpu_count, "CPUs\t", memory_budget, "MB Memory budget")
+                        self.db_bench_tasks.append(
+                            DB_TASK(temp_para_dict, DEFAULT_DB_BENCH, target_dir, cpu_count))
 
         return
 

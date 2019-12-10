@@ -43,10 +43,10 @@ class HardwareEnvironment:
             step = int((max_CPU - min_CPU) / set_size)
             self.CPU_experiment_set = list(range(min_CPU, max_CPU, step))
 
-    def config_Memory(self, set_size, min_mem, max_mem):
+    def config_Memory(self, min_mem, set_size):
         # memory can not be given by default, for it's related to the Memtable copy number
         # use log scale to generate parameter set
-        self.Memory_experiment_set = np.linspace(min_mem, max_mem, set_size, endpoint=True, dtype=int)
+        self.Memory_experiment_set = np.linspace(min_mem, min_mem * (2 ^ set_size), set_size, endpoint=True, dtype=int)
 
     def get_current_memory_experiment_set(self):
         return self.Memory_experiment_set
@@ -55,7 +55,7 @@ class HardwareEnvironment:
         return self.CPU_experiment_set
 
     def add_storage_path(self, db_path, storage_material):
-        self.path_list.append((db_path,storage_material))
+        self.path_list.append((db_path, storage_material))
 
     def get_storage_paths(self):
         return self.path_list

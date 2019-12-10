@@ -76,3 +76,9 @@ def parameter_tuning(db_bench, para_dic={}):
         filled_para_list.append(filled_para)
 
     return filled_para_list
+
+def parameter_printer(filled_para_list):
+    command = ""
+    for para in filled_para_list:
+        command+= (para + " ")
+    return command
