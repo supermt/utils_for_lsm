@@ -9,7 +9,8 @@ from parameter_generator import StorageMaterial
 if __name__ == '__main__':
     env = HardwareEnvironment()
     # db_bench_options = parameter_tuning(DEFAULT_DB_BENCH, para_dic={})
-    env.config_CPU(set_size=4, max_CPU=8)
+    # env.config_CPU(set_size=4, max_CPU=8)
+    env.config_CPU_by_list([1,2,4,8])
     env.config_Memory(min_mem=(128 * 1024 * 1024), set_size=8)
 
     env.add_storage_path("/home/supermt/rockdb_ssd", StorageMaterial.SATASSD)
