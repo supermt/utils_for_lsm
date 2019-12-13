@@ -154,7 +154,7 @@ class DB_launcher:
     db_bench_tasks = []
     db_bench = ""
 
-    def __init__(self, env: HardwareEnvironment, db_bench=DEFAULT_DB_BENCH):
+    def __init__(self, env: HardwareEnvironment,result_base, db_bench=DEFAULT_DB_BENCH):
         # for parameter_set in parameter_sets:
         #     running_process = start_db_bench(db_bench, parameter_set["storage_path"],
         #                                      parameter_set["running_parameter"])
@@ -164,7 +164,7 @@ class DB_launcher:
         print(env.get_current_CPU_experiment_set())
         print(env.get_current_memory_experiment_set())
 
-        self.prepare_directories(env)
+        self.prepare_directories(env,result_base)
 
         return
 

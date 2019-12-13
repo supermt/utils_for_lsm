@@ -30,6 +30,9 @@ class HardwareEnvironment:
     def __init__(self):
         return
 
+    def config_CPU_by_list(self,cpu_set=[]):
+        self.CPU_experiment_set=cpu_set
+
     def config_CPU(self, set_size, min_CPU=1, max_CPU=-1, log_scale=True):
         if log_scale:
             # use log scale to generate parameter set

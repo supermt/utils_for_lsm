@@ -1,9 +1,9 @@
 import multiprocessing
 
 SUDO_PASSWD = "sasomi"
-OUTPUT_PREFIX = "/home/supermt/PycharmProjects/utils_for_lsm/thread_influence"
-DEFAULT_DB_BENCH = "/media/supermt/hdd/rocksdb/db_bench"
-DEFAULT_DB_PATH = "/home/supermt/rockdb_ssd"
+OUTPUT_PREFIX = "/home/jinghuan/data"
+DEFAULT_DB_BENCH = "/home/jinghuan/db_bench"
+DEFAULT_DB_PATH = "/home/jinghuan/rockdb_satassd/"
 DEFAULT_BLOOM_BITS = 10
 
 # default Memory parameter
@@ -28,7 +28,7 @@ DEFAULT_ENTRY_COUNT = int(DEFAULT_DB_SIZE / DEFAULT_VALUE_SIZE)
 
 # default CPU options
 DEFAULT_COMPACTION_WORKER = str(multiprocessing.cpu_count())
-CPU_IN_TOTAL = 8
+CPU_IN_TOTAL = 32
 
 
 parameter_list = {
