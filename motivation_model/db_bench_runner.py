@@ -3,6 +3,7 @@ import pathlib
 import subprocess
 from shutil import copyfile, rmtree
 
+import copy
 import psutil
 
 from db_bench_option import *
@@ -58,6 +59,7 @@ def start_db_bench(db_bench_exec, db_path, options={}):
     Starting the db_bench thread by subprocess.popen(), return the Popen object
     ./db_bench --benchmarks="fillrandom" --key_size=16 --value_size=1024 --db="/media/supermt/hdd/rocksdb"
     """
+    print(options["db"])
     db_bench_path = os.path.abspath(db_bench_exec)
     db_path = os.path.abspath(db_path)
     options["db"] = db_path
@@ -91,7 +93,6 @@ def create_target_dir(target_path):
     # try:
     pathlib.Path(target_path).mkdir(parents=True, exist_ok=True)
     if len(os.listdir(target_path)) != 0:
-        print("existing files")
         return True
     else:
         return False
@@ -108,14 +109,17 @@ class DB_TASK:
     cpu_cores = 1
 
     def __init__(self, para_list, db_bench, result_dir, cpu_cores):
-        self.parameter_list = para_list
-        self.db_bench = db_bench
-        self.result_dir = result_dir
-        self.cpu_cores = cpu_cores
+        self.parameter_list = copy.deepcopy(para_list)
+        self.db_bench = copy.deepcopy(db_bench)
+        self.result_dir = copy.deepcopy(result_dir)
+        self.cpu_cores = copy.deepcopy(cpu_cores)
+        print("task prepared, here is the experiments", self.parameter_list)
 
     def run(self, gap=10):
         restrict_cpus(self.cpu_cores)
         self.parameter_list["max_background_compactions"] = self.cpu_cores
+        print("running in ",self.parameter_list["db"])
+
         # detect running status every 'gap' second
         try:
             timer = 0
@@ -126,11 +130,6 @@ class DB_TASK:
                 try:
                     db_bench_process.wait(gap)
                     print("mission complete")
-                    # memory_usage_files = []
-                    # thread_count = self.parameter_list.get("threads", 1)
-                    # for i in range(0, thread_count):
-                    #     memory_usage_files.append("MEMORY_USAGE" + str(i))
-                    # copy_current_data("./", self.result_dir, timer, memory_usage_files)
                     copy_current_data(self.parameter_list["db"], self.result_dir, timer,
                                       ["stderr.txt", "stdout.txt", "LOG"])
                     break
@@ -178,10 +177,11 @@ class DB_launcher:
         sub_path = work_dir + "/"
 
         temp_para_dict = {}
-
+ 
         for material in env.path_list:
             material_dir = sub_path + str(material[1])
             pathlib.Path(material_dir).mkdir(parents=True, exist_ok=True)
+            print(material[0],material[1])
             temp_para_dict["db"] = str(material[0])
             for cpu_count in env.get_current_CPU_experiment_set():
                 result_dir = material_dir + "/" + str(cpu_count) + "CPU"
@@ -192,12 +192,16 @@ class DB_launcher:
                     if create_target_dir(target_dir):
                         print(target_dir, "existing files")
                     else:
-                        print("Task prepared\t", cpu_count, "CPUs\t", memory_budget, "MB Memory budget")
-                        self.db_bench_tasks.append(
-                            DB_TASK(temp_para_dict, DEFAULT_DB_BENCH, target_dir, cpu_count))
+                        print("Task prepared\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
+                        job = DB_TASK(temp_para_dict,DEFAULT_DB_BENCH,target_dir,cpu_count)
+                        print(job.parameter_list)
+                        self.db_bench_tasks.append(job)
+
 
         return
 
     def run(self):
+        #print(self.db_bench_tasks)
         for task in self.db_bench_tasks:
+            print(task.parameter_list)
             task.run()

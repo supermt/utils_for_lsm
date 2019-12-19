@@ -49,7 +49,10 @@ class HardwareEnvironment:
     def config_Memory(self, min_mem, set_size):
         # memory can not be given by default, for it's related to the Memtable copy number
         # use log scale to generate parameter set
-        self.Memory_experiment_set = np.linspace(min_mem, min_mem * (2 ^ set_size), set_size, endpoint=True, dtype=int)
+        result = []
+        for i in range(0,set_size):
+            result.append(min_mem * (2**i))
+        self.Memory_experiment_set = result
 
     def get_current_memory_experiment_set(self):
         return self.Memory_experiment_set
