@@ -9,16 +9,11 @@ from parameter_generator import StorageMaterial
 if __name__ == '__main__':
     env = HardwareEnvironment()
     # db_bench_options = parameter_tuning(DEFAULT_DB_BENCH, para_dic={})
-<<<<<<< HEAD
 #    env.config_CPU(set_size=4, max_CPU=8)
     env.config_CPU_by_list([2,4,8])
     env.config_Memory(min_mem=(16 * 1024 * 1024), set_size=4)
 
     print(env.get_current_memory_experiment_set())
-=======
-    env.config_CPU_by_list([1,2,4,8])
-    env.config_Memory(min_mem=(128 * 1024 * 1024), set_size=8)
->>>>>>> 1e95c13f8f3f54c5cb2932b10e1b5bc685cbfcdf
 
 #    env.add_storage_path("/home/supermt/rockdb_ssd", StorageMaterial.SATASSD)
 #    env.add_storage_path("/media/supermt/hdd/rocksdb/db", StorageMaterial.SATAHDD)
