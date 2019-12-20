@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
 #    env.add_storage_path("/home/supermt/rockdb_ssd", StorageMaterial.SATASSD)
 #    env.add_storage_path("/media/supermt/hdd/rocksdb/db", StorageMaterial.SATAHDD)
-    env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.PM)
+#    env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.PM)
     env.add_storage_path("/home/jinghuan/rocksdb_nvme",StorageMaterial.NVMeSSD)
 #    env.add_storage_path("/home/jinghuan/rocksdb_satassd",StorageMaterial.SATASSD)
 

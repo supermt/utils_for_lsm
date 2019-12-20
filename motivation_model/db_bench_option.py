@@ -71,7 +71,7 @@ def parameter_tuning(db_bench, para_dic={}):
         parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
     parameter_list["num"] = str(int(DEFAULT_DB_SIZE / int(parameter_list["value_size"])))
     parameter_list["base_background_compactions"] = parameter_list["max_background_compactions"]
-
+    parameter_list["max_background_jobs"] = int(parameter_list["max_background_compactions"]) + 1
 
     for parameter in parameter_list:
         filled_para = "--" + parameter + "=" + str(parameter_list[parameter])
