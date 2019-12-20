@@ -5,4 +5,5 @@ MEMORY_USAGE*
 stderr.txt
 stdout.txt
 sst_dump
-**/*LOG*
+vodlog*
+**/.DS_Store
