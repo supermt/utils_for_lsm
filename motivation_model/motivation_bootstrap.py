@@ -17,18 +17,13 @@ if __name__ == '__main__':
 
 #    env.add_storage_path("/home/supermt/rockdb_ssd", StorageMaterial.SATASSD)
 #    env.add_storage_path("/media/supermt/hdd/rocksdb/db", StorageMaterial.SATAHDD)
-#    env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.PM)
+    env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.PM_NOVA)
     env.add_storage_path("/home/jinghuan/rocksdb_nvme",StorageMaterial.NVMeSSD)
 #    env.add_storage_path("/home/jinghuan/rocksdb_satassd",StorageMaterial.SATASSD)
 
     
     reset_CPUs()
-    runner = DB_launcher(env,"/home/jinghuan/fillrandom_data", db_bench=DEFAULT_DB_BENCH)
+    runner = DB_launcher(env,"/home/jinghuan/fillrandom_fixed_sstable_data", db_bench=DEFAULT_DB_BENCH)
 
     runner.run()
     reset_CPUs()
-    # db_option = ['/media/supermt/hdd/rocksdb/db_bench', '--db=/media/supermt/hdd/rocksdb/db', '--benchmarks=fillseq',
-    #  '--num=483183820', '--key_size=8', '--value_size=100', '--block_size=65536', '--write_buffer_size=1342177280',
-    #  '--target_file_size_base=5368709120', '--min_write_buffer_number_to_merge=1', '--max_write_buffer_number=1',
-    #  '--level0_file_num_compaction_trigger=4', '--max_background_compactions=1', '--max_background_flushes=1',
-    #  '--threads=1', '--bloom_bits=10', '--compression_type=none']
