@@ -9,6 +9,7 @@ class StorageMaterial(Enum):
     NVMeSSD = 2
     SATASSD = 3
     SATAHDD = 4
+    PM_NOVA = 5
 
 
 class HardwareEnvironment:
