@@ -5,8 +5,6 @@ import glob
 import statistics
 
 
-TRANS_MICRO_SEC = 1000000
-
 def dev(input_list):
     return statistics.stdev(input_list)
 
@@ -25,12 +23,13 @@ def column_values_record(compaction_sequence):
 
 def print_row(throughput, compaction_latencies, compaction_cpu_latencies, compaction_input, compaction_redundant):
     # Throughput,Compaction Frequency,Cumulative Compaction Cost, Cumulative CPU Time,Compaction Input Records,Compacted Redundant Records
-    
-    return "%s,%s,%.2f,%.2f,%s,%s" % (throughput,len(compaction_latencies), sum(compaction_latencies)/TRANS_MICRO_SEC,
-                                  sum(compaction_cpu_latencies)/TRANS_MICRO_SEC, sum(
+    return "%s,%s,%s,%s,%s,%s" % (throughput, len(compaction_latencies), sum(compaction_latencies),
+                                  sum(compaction_cpu_latencies), sum(
                                       compaction_input), sum(compaction_redundant)
                                   )
 
+
+TRANS_MICRO_SEC = 1000000
 
 
 def handle_log_file(log_file):
@@ -40,20 +39,20 @@ def handle_log_file(log_file):
 def handle_stdout_file(stdout_file):
     try:
         speedline = open(stdout_file, "r").readlines()[-1]
-        # print(speedline)
+        print(speedline)
         throughput = speedline.split("op ")[1].split(" ops/sec")[0]
         return throughput
     except:
         stderr_file = stdout_file.replace("stdout","stderr")
         speedline = open(stderr_file,"r").readlines()
-        # print(speedline)
+        print(speedline)
         return 0
 
-print("DISK TYPE,CPU,Memtable Size,Throughput,Compaction Frequency,Overall Compaction Cost,Cumulative CPU Time,Cumulative Compaction Input,Overall Redundant Records")
-# print("DISK TYPE,CPU,Memtable Size,Number of Compactions,Overall Compaction Redundant Records,Max Compaction Redundant Records,Min Compaction Redundant Records,Avg of Compaction Redundant Records,Dev of Compaction Redundant Records")
 
-materials = ["PM", "PM_NOVA", "NVMeSSD"]
-# materials = ["SATASSD"]
+print("DISK TYPE,CPU,Memtable Size,Number of Compactions,Overall Compaction Redundant Records,Max Compaction Redundant Records,Min Compaction Redundant Records,Avg of Compaction Redundant Records,Dev of Compaction Redundant Records")
+
+# materials = ["PM", "PM_NOVA", "NVMeSSD", "SATASSD"]
+materials = ["SATASSD"]
 CPUs = [2, 4, 8]
 memtable_sizes = [16, 32, 64, 128]
 
