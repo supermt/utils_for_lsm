@@ -34,19 +34,6 @@ class HardwareEnvironment:
     def config_CPU_by_list(self,cpu_set=[]):
         self.CPU_experiment_set=cpu_set
 
-    def config_CPU(self, set_size, min_CPU=1, max_CPU=-1, log_scale=True):
-        if log_scale:
-            # use log scale to generate parameter set
-            if (max_CPU < 0):
-                max_CPU = self.MaxAvaliableCPU
-            self.CPU_experiment_set = np.linspace(min_CPU, max_CPU, set_size, endpoint=True, dtype=int)
-        else:
-            if max_CPU < 0:
-                max_CPU = self.MaxAvaliableCPU
-            max_CPU += 1
-            step = int((max_CPU - min_CPU) / set_size)
-            self.CPU_experiment_set = list(range(min_CPU, max_CPU, step))
-
     def config_Memory(self, min_mem, set_size):
         # memory can not be given by default, for it's related to the Memtable copy number
         # use log scale to generate parameter set

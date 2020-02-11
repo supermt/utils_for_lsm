@@ -29,11 +29,10 @@ def restrict_cpus(count):
     count = int(count)
     if (count > CPU_IN_TOTAL):
         # too many cores asked
-        print("no that many cpu cores")
+        print("no that many cpu cores",count)
         return
     else:
-        print("restricting the CPU cores")
-        print(count)
+        print("restricting the CPU cores to ",count)
         for id in range(count, CPU_IN_TOTAL):
             turn_off_cpu(id)
         print("finished")
@@ -43,7 +42,6 @@ def reset_CPUs():
     for id in range(1, CPU_IN_TOTAL):
         turn_on_cpu(id)
     print("Reset all cpus")
-
 
 def create_db_path(db_path):
     try:
@@ -154,17 +152,8 @@ class DB_launcher:
     db_bench = ""
 
     def __init__(self, env: HardwareEnvironment,result_base, db_bench=DEFAULT_DB_BENCH):
-        # for parameter_set in parameter_sets:
-        #     running_process = start_db_bench(db_bench, parameter_set["storage_path"],
-        #                                      parameter_set["running_parameter"])
-        #     self.db_bench_processes.append(running_process)
         self.db_bench = db_bench
-        print(env.get_storage_paths())
-        print(env.get_current_CPU_experiment_set())
-        print(env.get_current_memory_experiment_set())
-
         self.prepare_directories(env,result_base)
-
         return
 
     def prepare_directories(self, env: HardwareEnvironment, work_dir="./db", db_bench=DEFAULT_DB_BENCH):
@@ -196,12 +185,9 @@ class DB_launcher:
                         job = DB_TASK(temp_para_dict,DEFAULT_DB_BENCH,target_dir,cpu_count)
                         print(job.parameter_list)
                         self.db_bench_tasks.append(job)
-
-
         return
 
     def run(self):
-        #print(self.db_bench_tasks)
         for task in self.db_bench_tasks:
             print(task.parameter_list)
             task.run()
