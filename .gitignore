@@ -7,3 +7,4 @@ stdout.txt
 sst_dump
 vodlog*
 **/.DS_Store
+**/__pycache__/*
