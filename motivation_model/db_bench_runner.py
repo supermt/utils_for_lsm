@@ -57,7 +57,7 @@ def start_db_bench(db_bench_exec, db_path, options={}):
     Starting the db_bench thread by subprocess.popen(), return the Popen object
     ./db_bench --benchmarks="fillrandom" --key_size=16 --value_size=1024 --db="/media/supermt/hdd/rocksdb"
     """
-    print(options["db"])
+    #print(options["db"])
     db_bench_path = os.path.abspath(db_bench_exec)
     db_path = os.path.abspath(db_path)
     options["db"] = db_path
@@ -65,9 +65,8 @@ def start_db_bench(db_bench_exec, db_path, options={}):
     with open(db_path + "/stdout.txt", "wb") as out, open(db_path + "/stderr.txt", "wb") as err:
         print("DB_BENCH starting, with parameters:")
         db_bench_options = parameter_tuning(db_bench_exec, para_dic=options)
-        # print(db_bench_options)
-        print(parameter_printer(db_bench_options))
         db_bench_process = subprocess.Popen(db_bench_options, stdout=out, stderr=err)
+        print(parameter_printer(db_bench_options))
         # in case there are too many opened files
         os.system('echo %s|sudo -S %s' % (SUDO_PASSWD, "prlimit --pid " +
                                           str(db_bench_process.pid) + " --nofile=20480:40960"))
@@ -111,18 +110,17 @@ class DB_TASK:
         self.db_bench = copy.deepcopy(db_bench)
         self.result_dir = copy.deepcopy(result_dir)
         self.cpu_cores = copy.deepcopy(cpu_cores)
-        print("task prepared, here is the experiments", self.parameter_list)
 
     def run(self, gap=10):
         restrict_cpus(self.cpu_cores)
         self.parameter_list["max_background_compactions"] = self.cpu_cores
-        print("running in ",self.parameter_list["db"])
+#        print("running in ",self.parameter_list["db"])
 
         # detect running status every 'gap' second
         try:
             timer = 0
             db_bench_process = start_db_bench(self.db_bench, self.parameter_list["db"], self.parameter_list)
-            print("Mission started, output is in:" + self.result_dir)
+#            print("Mission started, output is in:" + self.result_dir)
             # create_target_dir(self.result_dir)
             while True:
                 try:
@@ -152,6 +150,7 @@ class DB_launcher:
     db_bench = ""
 
     def __init__(self, env: HardwareEnvironment,result_base, db_bench=DEFAULT_DB_BENCH):
+        self.db_bench_tasks = []
         self.db_bench = db_bench
         self.prepare_directories(env,result_base)
         return
@@ -170,7 +169,6 @@ class DB_launcher:
         for material in env.path_list:
             material_dir = sub_path + str(material[1])
             pathlib.Path(material_dir).mkdir(parents=True, exist_ok=True)
-            print(material[0],material[1])
             temp_para_dict["db"] = str(material[0])
             for cpu_count in env.get_current_CPU_experiment_set():
                 result_dir = material_dir + "/" + str(cpu_count) + "CPU"
@@ -183,11 +181,10 @@ class DB_launcher:
                     else:
                         print("Task prepared\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
                         job = DB_TASK(temp_para_dict,DEFAULT_DB_BENCH,target_dir,cpu_count)
-                        print(job.parameter_list)
                         self.db_bench_tasks.append(job)
         return
 
     def run(self):
         for task in self.db_bench_tasks:
-            print(task.parameter_list)
+            #print(task.parameter_list)
             task.run()

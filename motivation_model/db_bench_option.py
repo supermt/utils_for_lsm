@@ -55,14 +55,15 @@ parameter_list = {
 
 
 def tuning_strategy_l0_equals_l1():
-    parameter_list["max_bytes_for_level_base"] = int(parameter_list["target_file_size_base"]) * 10
-    parameter_list["min_write_buffer_number_to_merge"] = int(parameter_list["max_bytes_for_level_base"] / int(
-        int(parameter_list["level0_file_num_compaction_trigger"]) * int(parameter_list["write_buffer_size"])))
+    # parameter_list["max_bytes_for_level_base"] = int(parameter_list["target_file_size_base"]) * 10
+    # parameter_list["min_write_buffer_number_to_merge"] = int(parameter_list["max_bytes_for_level_base"] / int(
+    #     int(parameter_list["level0_file_num_compaction_trigger"]) * int(parameter_list["write_buffer_size"])))
+    parameter_list["max_bytes_for_level_base"] = int(parameter_list["write_buffer_size"]) * int(parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 
-
-def tuning_strategy_increase_sst():
-    parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"]) * int(
-        parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
+def basic_tuning():
+    parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"])
+    # int(parameter_list["write_buffer_size"]) * int(
+        # parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 
 
 def parameter_tuning(db_bench, para_dic={}):
@@ -75,6 +76,7 @@ def parameter_tuning(db_bench, para_dic={}):
         parameter_list[para] = str(para_dic[para])
 
     # choose tuning strategy
+    basic_tuning()
     tuning_strategy_l0_equals_l1()
 
     # some values need calculation
