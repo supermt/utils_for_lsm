@@ -130,15 +130,20 @@ if __name__ == "__main__":
                     "cpu":cpu_group,
                     "batch_size":batch_size_group
                 },
-                range_y=[100000,300000],
+                labels={"cpu":"","IOPS":"Overall Throughput (OPs/sec)"},
+                # range_y=[100000,300000]
             )
     fontsize=20
     fig.update_layout(
-        margin=dict(l=fontsize,r=fontsize,t=fontsize,b=fontsize),
+        autosize=False,
+        width=1600,
+        height=900,
+        # margin=dict(l=fontsize,r=fontsize,t=fontsize,b=fontsize),
         paper_bgcolor="LightSteelBlue",
         # yaxis=dict(title="IOPS"),
-        # xaxis=dict(title="Bandwidth (MB/s)"),
+        xaxis=dict(autorange=True),
         font=dict(size=fontsize),
     )
-    fig.show()
-    # # fig.write_image("image/CPUvsBandwidth.pdf")
+    fig.update_yaxes(automargin=True)
+    # fig.show()
+    fig.write_image("image/CPUvsBandwidth.pdf")
