@@ -112,7 +112,12 @@ if __name__ == "__main__":
     bandwidth_group = [x + "mb" for x in bandwidth_group]
 #   size_color = {16: "rgb(66,106,199)", 32: "rgb(254,117,0)",
 #              64: "rgb(165,165,165)", 128: "rgb(255,194,0)"}
-    
+    batch_size_to_color_map = {
+        "16MB": "rgb(66,106,199)",
+        "32MB":"rgb(254,117,0)",
+        "64MB":"rgb(165,165,165)",
+        "128MB": "rgb(255,194,0)"
+    }
     media = "NVMeSSD"
     batch_size_group = ["16MB","32MB","64MB","128MB"]
     
@@ -131,19 +136,18 @@ if __name__ == "__main__":
                     "batch_size":batch_size_group
                 },
                 labels={"cpu":"","IOPS":"Overall Throughput (OPs/sec)"},
-                # range_y=[100000,300000]
-            )
+                color_discrete_map=batch_size_to_color_map
+                )
     fontsize=20
+
     fig.update_layout(
         autosize=False,
         width=1600,
         height=900,
-        # margin=dict(l=fontsize,r=fontsize,t=fontsize,b=fontsize),
-        paper_bgcolor="LightSteelBlue",
-        # yaxis=dict(title="IOPS"),
-        xaxis=dict(autorange=True),
         font=dict(size=fontsize),
+        plot_bgcolor='white',
     )
     fig.update_yaxes(automargin=True)
+    fig.update_xaxes(showgrid=False)
     # fig.show()
     fig.write_image("image/CPUvsBandwidth.pdf")
