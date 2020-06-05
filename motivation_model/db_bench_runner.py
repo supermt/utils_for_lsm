@@ -66,11 +66,14 @@ def start_db_bench(db_bench_exec, db_path, options={}):
         print("DB_BENCH starting, with parameters:")
         db_bench_options = parameter_tuning(db_bench_exec, para_dic=options)
         db_bench_process = subprocess.Popen(db_bench_options, stdout=out, stderr=err)
+
+        #db_bench_process = subprocess.Popen(db_bench_options, stdout=out, stderr=err)
         print(parameter_printer(db_bench_options))
         # in case there are too many opened files
         os.system('echo %s|sudo -S %s' % (SUDO_PASSWD, "prlimit --pid " +
                                           str(db_bench_process.pid) + " --nofile=20480:40960"))
 
+    print(db_bench_process.pid)
     return db_bench_process
 
 

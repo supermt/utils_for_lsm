@@ -69,8 +69,8 @@ def basic_tuning():
 def parameter_tuning(db_bench, para_dic={}):
     if db_bench == "":
         db_bench = DEFAULT_DB_BENCH
-    filled_para_list = [db_bench]
-
+    #filled_para_list = ["cgexec -g blkio:test_group1",db_bench]
+    filled_para_list = ['/usr/bin/cgexec','-g','blkio:test_group1',db_bench]
     # use para_dic to modify the default parameter
     for para in para_dic:
         parameter_list[para] = str(para_dic[para])
@@ -87,7 +87,7 @@ def parameter_tuning(db_bench, para_dic={}):
     for parameter in parameter_list:
         filled_para = "--" + parameter + "=" + str(parameter_list[parameter])
         filled_para_list.append(filled_para)
-
+    print(filled_para_list)
     return filled_para_list
 
 
