@@ -11,8 +11,8 @@ if __name__ == '__main__':
     env.config_CPU_by_list([8])
     env.config_Memory(min_mem=(64 * 1024 * 1024), set_size=1)
 
-    env.add_storage_path("/home/jinghuan/rocksdb_nvme",StorageMaterial.PM)
-    env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.NVMeSSD)
+    env.add_storage_path("/media/jinghuan/nvme",StorageMaterial.NVMeSSD)
+#    env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.NVMeSSD)
 
     reset_CPUs()
     runner = DB_launcher(env,"/home/jinghuan/fillrandom_detailed_tuned", db_bench=DEFAULT_DB_BENCH)

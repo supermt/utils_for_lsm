@@ -11,21 +11,30 @@ import os
 if __name__ == '__main__':
     env = HardwareEnvironment()
     CPU_IN_TOTAL = 12
-    io_bandwidth=[400,800,1200,1600,2000]
+    io_bandwidth=[100,200,400]
     path_suffix = [str(band)+"mb" for band in io_bandwidth] 
     
     env.config_CPU_by_list([8])
     env.config_Memory(min_mem=(64 * 1024 * 1024), set_size=1)
 
-    env.add_storage_path("/home/jinghuan/rocksdb_nvme",StorageMaterial.NVMeSSD)
+    env.add_storage_path("/home/jinghuan/rocksdb_hdd/rocksdb_test",StorageMaterial.SATAHDD)
+    env.add_storage_path("/home/jinghuan/rocksdb_sata/rocksdb_test",StorageMaterial.SATASSD)
+    env.add_storage_path("/home/jinghuan/rocksdb_nvme/rocksdb_test",StorageMaterial.NVMeSSD)
     # env.add_storage_path("/home/jinghuan/rocksdb_pmem",StorageMaterial.NVMeSSD)
 
     reset_CPUs()
    
+    os.system("cgcreate -g blkio:/test_group1")
     for bandwidth in io_bandwidth:
-        os.system('cgset -r blkio.throttle.write_bps_device="259:0 '+str(bandwidth*1024*1024)+'" /')
-        os.system('cgget / | grep blkio.throttle.write_bps_device')
-        print("/home/jinghuan/fillrandom_bandwidth_limiting"+str(bandwidth)+"mb")
-        DB_launcher(env,"/home/jinghuan/bandwidth_limiting/"+str(bandwidth)+"mb", db_bench=DEFAULT_DB_BENCH).run()
+        # Limit for HDD
+        os.system('cgset -r blkio.throttle.write_bps_device="8:0 '+str(bandwidth*1024*1024)+'" test_group1')
+        # Limit for SATA SSD
+        os.system('cgset -r blkio.throttle.write_bps_device="8:16 '+str(bandwidth*1024*1024)+'" test_group1')
+        # Limit for NVMe SSD
+        os.system('cgset -r blkio.throttle.write_bps_device="259:0 '+str(bandwidth*1024*1024)+'" test_group1')
+        # test for the limiting
+        os.system('cat /sys/fs/cgroup/blkio/test_group1/blkio.throttle.write_bps_device')
+        DB_launcher(env,"/home/jinghuan/bandwidth_limiting/"+str(bandwidth)+"mb", db_bench= "cgexec -g blkio:test_group1 "+DEFAULT_DB_BENCH).run()
 
+    os.system("cgdelete blkio:/test_group1")
     reset_CPUs()
