@@ -32,7 +32,10 @@ class HardwareEnvironment:
         return
 
     def config_CPU_by_list(self,cpu_set=[]):
-        self.CPU_experiment_set=cpu_set
+        self.CPU_experiment_set.extend(cpu_set)
+
+    def config_Memory_by_list(self,mem_list=[]):
+        self.Memory_experiment_set.extend(mem_list)
 
     def config_Memory(self, min_mem, set_size):
         # memory can not be given by default, for it's related to the Memtable copy number

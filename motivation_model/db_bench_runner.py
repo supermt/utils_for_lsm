@@ -102,12 +102,13 @@ def clean_cgroup():
     if cgdelete_result.stdout.decode('utf-8') != "":
         raise Exception("Cgreate failed due to:" +
                         cgdelete_result.stdout.decode('utf-8'))
+
+                        
 def start_db_bench(db_bench_exec, db_path, options={}, cgroup={}, perf={}):
     """
     Starting the db_bench thread by subprocess.popen(), return the Popen object
     ./db_bench --benchmarks="fillrandom" --key_size=16 --value_size=1024 --db="/media/supermt/hdd/rocksdb"
     """
-    initial_cgroup()
     if not cgroup:
         cgroup = {"cgexec": "/usr/bin/cgexec",
                   "argument": "-g",
@@ -222,6 +223,7 @@ class DB_launcher:
         self.db_bench_tasks = []
         self.db_bench = db_bench
         self.prepare_directories(env, result_base)
+        initial_cgroup()
         return
 
     def prepare_directories(self, env: HardwareEnvironment, work_dir="./db", db_bench=DEFAULT_DB_BENCH):
@@ -249,8 +251,7 @@ class DB_launcher:
                     if create_target_dir(target_dir):
                         print(target_dir, "existing files")
                     else:
-                        print("Task prepared\t", cpu_count, "CPUs\t",
-                              memory_budget/(1024*1024), "MB Memory budget")
+                        print("Task prepared\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
                         job = DB_TASK(temp_para_dict,
                                       DEFAULT_DB_BENCH, target_dir, cpu_count)
                         self.db_bench_tasks.append(job)
