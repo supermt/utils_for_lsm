@@ -11,6 +11,9 @@ from db_bench_option import CPU_IN_TOTAL
 from db_bench_option import SUDO_PASSWD
 from parameter_generator import HardwareEnvironment
 
+CGROUP_NAME = "test_group1"
+CPU_RESTRICTING_TYPE = 0
+
 
 def turn_on_cpu(id):
     # command = "echo 1 | sudo tee /sys/devices/system/cpu/cpu1/online"
@@ -24,24 +27,57 @@ def turn_off_cpu(id):
         "echo %s|sudo -S %s" % (SUDO_PASSWD, "echo 0 | sudo tee /sys/devices/system/cpu/cpu" + str(id) + "/online"))
 
 
-def restrict_cpus(count):
+def restrict_cpus(count, type=0):
+    if type == 0:
+        restrict_cpus_by_cgroup(count)
+    else:
+        restrict_cpus_by_turning(count)
+        CPU_RESTRICTING_TYPE = 1
+
+
+def restrict_cpus_by_cgroup(count):
+    cgget_result = subprocess.run(
+        ['cgget', '-g', 'cpu:'+CGROUP_NAME], stdout=subprocess.PIPE)
+    result_strings = cgget_result.stdout.decode('utf-8').split("\n")
+    cpu_period_time = 0
+    for result_string in result_strings:
+        if "cpu.cfs_period_us" in result_string:
+            cpu_period_time = int(result_string.split(" ")[1])
+
+    print(cpu_period_time)
+    cgset_result = subprocess.run(
+        ['cgset', '-r', 'cpu.cfs_quota_us='+str(count*cpu_period_time), CGROUP_NAME], stdout=subprocess.PIPE)
+
+    back_string = cgset_result.stdout.decode('utf-8')
+    if back_string == "":
+        print("Restrict the CPU period to "+str(count)+" times of CPU quota")
+    else:
+        print("Restrcting failed due to"+back_string)
+
+
+def restrict_cpus_by_turning(count):
     reset_CPUs()
     count = int(count)
     if (count > CPU_IN_TOTAL):
         # too many cores asked
-        print("no that many cpu cores",count)
+        print("no that many cpu cores", count)
         return
     else:
-        print("restricting the CPU cores to ",count)
+        print("restricting the CPU cores to ", count)
         for id in range(count, CPU_IN_TOTAL):
             turn_off_cpu(id)
         print("finished")
 
 
 def reset_CPUs():
-    for id in range(1, CPU_IN_TOTAL):
-        turn_on_cpu(id)
+    if CPU_RESTRICTING_TYPE == 1:
+        for id in range(1, CPU_IN_TOTAL):
+            turn_on_cpu(id)
+    else:
+        subprocess.run(
+            ['cgset', '-r', 'cpu.cfs_quota_us=-1', CGROUP_NAME])
     print("Reset all cpus")
+
 
 def create_db_path(db_path):
     try:
@@ -52,20 +88,49 @@ def create_db_path(db_path):
         pathlib.Path(db_path).mkdir(parents=True, exist_ok=False)
 
 
-def start_db_bench(db_bench_exec, db_path, options={}):
+def initial_cgroup():
+    cgcreate_result = subprocess.run(
+        ['cgcreate', '-g', 'blkio,cpu:/'+CGROUP_NAME], stdout=subprocess.PIPE)
+    if cgcreate_result.stdout.decode('utf-8') != "":
+        raise Exception("Cgreate failed due to:" +
+                        cgcreate_result.stdout.decode('utf-8'))
+
+
+def clean_cgroup():
+    cgdelete_result = subprocess.run(
+        ['cgdelete', '-r', 'blkio,cpu:/'+CGROUP_NAME], stdout=subprocess.PIPE)
+    if cgdelete_result.stdout.decode('utf-8') != "":
+        raise Exception("Cgreate failed due to:" +
+                        cgdelete_result.stdout.decode('utf-8'))
+def start_db_bench(db_bench_exec, db_path, options={}, cgroup={}, perf={}):
     """
     Starting the db_bench thread by subprocess.popen(), return the Popen object
     ./db_bench --benchmarks="fillrandom" --key_size=16 --value_size=1024 --db="/media/supermt/hdd/rocksdb"
     """
-    #print(options["db"])
-    db_bench_path = os.path.abspath(db_bench_exec)
+    initial_cgroup()
+    if not cgroup:
+        cgroup = {"cgexec": "/usr/bin/cgexec",
+                  "argument": "-g",
+                  "groups": "blkio,cpu:"+CGROUP_NAME
+                  }
+    # print(options["db"])
     db_path = os.path.abspath(db_path)
     options["db"] = db_path
     create_target_dir(db_path)
     with open(db_path + "/stdout.txt", "wb") as out, open(db_path + "/stderr.txt", "wb") as err:
         print("DB_BENCH starting, with parameters:")
-        db_bench_options = parameter_tuning(db_bench_exec, para_dic=options)
-        db_bench_process = subprocess.Popen(db_bench_options, stdout=out, stderr=err)
+        db_bench_options = parameter_tuning(
+            os.path.abspath(db_bench_exec), para_dic=options)
+        bootstrap_list = []
+
+        if cgroup:
+            # cgroup = {"cgexec":"/usr/bin/cgexec","argument","-g","groups","blkio,cpu:a_group"}
+            bootstrap_list.extend(cgroup.values())
+
+        bootstrap_list.extend(db_bench_options)
+
+        db_bench_process = subprocess.Popen(
+            bootstrap_list, stdout=out, stderr=err)
 
         #db_bench_process = subprocess.Popen(db_bench_options, stdout=out, stderr=err)
         print(parameter_printer(db_bench_options))
@@ -122,7 +187,8 @@ class DB_TASK:
         # detect running status every 'gap' second
         try:
             timer = 0
-            db_bench_process = start_db_bench(self.db_bench, self.parameter_list["db"], self.parameter_list)
+            db_bench_process = start_db_bench(
+                self.db_bench, self.parameter_list["db"], self.parameter_list)
 #            print("Mission started, output is in:" + self.result_dir)
             # create_target_dir(self.result_dir)
             while True:
@@ -152,10 +218,10 @@ class DB_launcher:
     db_bench_tasks = []
     db_bench = ""
 
-    def __init__(self, env: HardwareEnvironment,result_base, db_bench=DEFAULT_DB_BENCH):
+    def __init__(self, env: HardwareEnvironment, result_base, db_bench=DEFAULT_DB_BENCH):
         self.db_bench_tasks = []
         self.db_bench = db_bench
-        self.prepare_directories(env,result_base)
+        self.prepare_directories(env, result_base)
         return
 
     def prepare_directories(self, env: HardwareEnvironment, work_dir="./db", db_bench=DEFAULT_DB_BENCH):
@@ -168,7 +234,7 @@ class DB_launcher:
         sub_path = work_dir + "/"
 
         temp_para_dict = {}
- 
+
         for material in env.path_list:
             material_dir = sub_path + str(material[1])
             pathlib.Path(material_dir).mkdir(parents=True, exist_ok=True)
@@ -178,16 +244,19 @@ class DB_launcher:
                 temp_para_dict["max_background_compactions"] = str(cpu_count)
                 for memory_budget in env.get_current_memory_experiment_set():
                     temp_para_dict["write_buffer_size"] = memory_budget
-                    target_dir = result_dir + "/" + str(int(memory_budget / 1024 / 1024)) + "MB"
+                    target_dir = result_dir + "/" + \
+                        str(int(memory_budget / 1024 / 1024)) + "MB"
                     if create_target_dir(target_dir):
                         print(target_dir, "existing files")
                     else:
-                        print("Task prepared\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
-                        job = DB_TASK(temp_para_dict,DEFAULT_DB_BENCH,target_dir,cpu_count)
+                        print("Task prepared\t", cpu_count, "CPUs\t",
+                              memory_budget/(1024*1024), "MB Memory budget")
+                        job = DB_TASK(temp_para_dict,
+                                      DEFAULT_DB_BENCH, target_dir, cpu_count)
                         self.db_bench_tasks.append(job)
         return
 
     def run(self):
         for task in self.db_bench_tasks:
-            #print(task.parameter_list)
+            # print(task.parameter_list)
             task.run()

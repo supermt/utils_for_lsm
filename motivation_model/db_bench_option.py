@@ -1,9 +1,11 @@
 import multiprocessing
+from configparser import ConfigParser
 
-SUDO_PASSWD = "sasomi"
-OUTPUT_PREFIX = "/home/jinghuan/data"
-DEFAULT_DB_BENCH = "/home/jinghuan/db_bench"
-DEFAULT_BLOOM_BITS = 10
+default_cfg = ConfigParser()
+default_cfg.read("default.ini")
+
+SUDO_PASSWD = default_cfg.get("Permission","passwd")
+DEFAULT_DB_BENCH = default_cfg.get("Paths","db_bench_path")
 
 # default Memory parameter
 DEFAULT_MEMTABLE_SIZE = 64 * 1024 * 2014  # 256M, memtable size
@@ -23,12 +25,12 @@ DEFAULT_BLOOM_BIT = 10
 # default entry options
 DEFAULT_KEY_SIZE = 8
 DEFAULT_VALUE_SIZE = 100
-DEFAULT_DB_SIZE = int(25 * 1024 * 1024 * 1024)
+DEFAULT_DB_SIZE = int(default_cfg.get("Entry Control","db_size"))
 DEFAULT_ENTRY_COUNT = int(DEFAULT_DB_SIZE / DEFAULT_VALUE_SIZE)
 
 # default CPU options
 DEFAULT_COMPACTION_WORKER = str(multiprocessing.cpu_count())
-CPU_IN_TOTAL = 12
+CPU_IN_TOTAL = int(default_cfg.get("CPU","cpu_in_total"))
 
 parameter_list = {
     "db": DEFAULT_DB_BENCH,
@@ -48,9 +50,8 @@ parameter_list = {
     "bloom_bits": str(DEFAULT_BLOOM_BIT),
     "compression_type": DEFAULT_COMPRESSION,
     "base_background_compactions": 1,
-    "report_bg_io_stats": True,
+    "report_bg_io_stats": False,
     "subcompactions": 1,  # How many subcompactions will be applied to L0 Compaction
-
 }
 
 
@@ -70,7 +71,8 @@ def parameter_tuning(db_bench, para_dic={}):
     if db_bench == "":
         db_bench = DEFAULT_DB_BENCH
     #filled_para_list = ["cgexec -g blkio:test_group1",db_bench]
-    filled_para_list = ['/usr/bin/cgexec','-g','blkio:test_group1',db_bench]
+    # filled_para_list = ['/usr/bin/cgexec','-g','blkio:test_group1',db_bench]
+    filled_para_list = [db_bench]
     # use para_dic to modify the default parameter
     for para in para_dic:
         parameter_list[para] = str(para_dic[para])
@@ -87,7 +89,7 @@ def parameter_tuning(db_bench, para_dic={}):
     for parameter in parameter_list:
         filled_para = "--" + parameter + "=" + str(parameter_list[parameter])
         filled_para_list.append(filled_para)
-    print(filled_para_list)
+    
     return filled_para_list
 
 
