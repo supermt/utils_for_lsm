@@ -1,5 +1,7 @@
 import multiprocessing
 from configparser import ConfigParser
+import json
+from parameter_generator import StorageMaterial
 
 default_cfg = ConfigParser()
 default_cfg.read("default.ini")
@@ -32,7 +34,7 @@ DEFAULT_ENTRY_COUNT = int(DEFAULT_DB_SIZE / DEFAULT_VALUE_SIZE)
 DEFAULT_COMPACTION_WORKER = str(multiprocessing.cpu_count())
 CPU_IN_TOTAL = int(default_cfg.get("CPU","cpu_in_total"))
 
-parameter_list = {
+ori_parameter_list = {
     "db": DEFAULT_DB_BENCH,
     "benchmarks": "fillrandom",
     "num": DEFAULT_ENTRY_COUNT,
@@ -54,14 +56,39 @@ parameter_list = {
     "subcompactions": 1,  # How many subcompactions will be applied to L0 Compaction
 }
 
+def load_config_file(filename='template.json'):
+    f = open(filename,) 
+    return json.load(f)
 
-def tuning_strategy_l0_equals_l1():
+def set_parameters_to_env(cfg,env):
+    try:
+        env.config_CPU_by_list(cfg['cpu_set'])
+        mem_list = cfg['memtable_size_set']
+        
+        mem_size_list = []
+
+        for mem_size in mem_list:
+            if type(mem_size) == str:
+                mem_size_list.append(eval(mem_size))
+            else:
+                mem_size_list.append(mem_size)
+        print(mem_size_list)
+        env.config_Memory_by_list(mem_size_list)
+        for storage_path in cfg['storage_paths']:
+            env.add_storage_path(storage_path['path'],StorageMaterial[storage_path['media_type']])
+    except KeyError as errormsg:
+        print("Missing configuration entry or error configuration entry: "+str(errormsg)+" please read the template.json file as a reference")
+    else:
+        print("All parameter loaded")
+
+
+def tuning_strategy_l0_equals_l1(parameter_list):
     # parameter_list["max_bytes_for_level_base"] = int(parameter_list["target_file_size_base"]) * 10
     # parameter_list["min_write_buffer_number_to_merge"] = int(parameter_list["max_bytes_for_level_base"] / int(
     #     int(parameter_list["level0_file_num_compaction_trigger"]) * int(parameter_list["write_buffer_size"])))
     parameter_list["max_bytes_for_level_base"] = int(parameter_list["write_buffer_size"]) * int(parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 
-def basic_tuning():
+def basic_tuning(parameter_list):
     parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"])
     # int(parameter_list["write_buffer_size"]) * int(
         # parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
@@ -74,16 +101,18 @@ def parameter_tuning(db_bench, para_dic={}):
     # filled_para_list = ['/usr/bin/cgexec','-g','blkio:test_group1',db_bench]
     filled_para_list = [db_bench]
     # use para_dic to modify the default parameter
+    parameter_list = {}
+    parameter_list.update(ori_parameter_list)
     for para in para_dic:
         parameter_list[para] = str(para_dic[para])
 
     # choose tuning strategy
-    basic_tuning()
-    tuning_strategy_l0_equals_l1()
+    basic_tuning(parameter_list)
+    tuning_strategy_l0_equals_l1(parameter_list)
 
     # some values need calculation
     parameter_list["num"] = str(int(DEFAULT_DB_SIZE / int(parameter_list["value_size"])))
-    parameter_list["base_background_compactions"] = parameter_list["max_background_compactions"]
+    # parameter_list["base_background_compactions"] = parameter_list["max_background_compactions"]
     parameter_list["max_background_jobs"] = int(parameter_list["max_background_compactions"]) + 1
 
     for parameter in parameter_list:

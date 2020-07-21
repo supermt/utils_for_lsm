@@ -183,6 +183,8 @@ class DB_TASK:
     def run(self, gap=10):
         restrict_cpus(self.cpu_cores)
         self.parameter_list["max_background_compactions"] = self.cpu_cores
+        # print("db task parameters:",self.parameter_list)
+
 #        print("running in ",self.parameter_list["db"])
 
         # detect running status every 'gap' second
@@ -218,10 +220,12 @@ class DB_TASK:
 class DB_launcher:
     db_bench_tasks = []
     db_bench = ""
+    options = {}
 
-    def __init__(self, env: HardwareEnvironment, result_base, db_bench=DEFAULT_DB_BENCH):
+    def __init__(self, env: HardwareEnvironment, result_base, db_bench=DEFAULT_DB_BENCH, extend_options={}):
         self.db_bench_tasks = []
         self.db_bench = db_bench
+        self.options = copy.deepcopy(extend_options)
         self.prepare_directories(env, result_base)
         initial_cgroup()
         return
@@ -251,7 +255,8 @@ class DB_launcher:
                     if create_target_dir(target_dir):
                         print(target_dir, "existing files")
                     else:
-                        print("Task prepared\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
+                        temp_para_dict.update(self.options)
+                        print("Task prepared:\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
                         job = DB_TASK(temp_para_dict,
                                       DEFAULT_DB_BENCH, target_dir, cpu_count)
                         self.db_bench_tasks.append(job)
@@ -259,5 +264,4 @@ class DB_launcher:
 
     def run(self):
         for task in self.db_bench_tasks:
-            # print(task.parameter_list)
             task.run()
