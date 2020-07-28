@@ -12,7 +12,7 @@ from db_bench_option import SUDO_PASSWD
 from parameter_generator import HardwareEnvironment
 
 CGROUP_NAME = "test_group1"
-CPU_RESTRICTING_TYPE = 0
+CPU_RESTRICTING_TYPE = 1 
 
 
 def turn_on_cpu(id):
@@ -181,7 +181,7 @@ class DB_TASK:
         self.cpu_cores = copy.deepcopy(cpu_cores)
 
     def run(self, gap=10):
-        restrict_cpus(self.cpu_cores)
+        restrict_cpus(self.cpu_cores,1)
         self.parameter_list["max_background_compactions"] = self.cpu_cores
         # print("db task parameters:",self.parameter_list)
 
