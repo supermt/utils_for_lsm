@@ -6,13 +6,15 @@ from shutil import copyfile, rmtree
 import copy
 import psutil
 
+import db_bench_option
+
 from db_bench_option import *
-from db_bench_option import CPU_IN_TOTAL
-from db_bench_option import SUDO_PASSWD
+# from db_bench_option import CPU_IN_TOTAL
+# from db_bench_option import SUDO_PASSWD
+# from db_bench_option import CPU_RESTRICTING_TYPE
 from parameter_generator import HardwareEnvironment
 
 CGROUP_NAME = "test_group1"
-CPU_RESTRICTING_TYPE = 1 
 
 
 def turn_on_cpu(id):
@@ -32,7 +34,6 @@ def restrict_cpus(count, type=0):
         restrict_cpus_by_cgroup(count)
     else:
         restrict_cpus_by_turning(count)
-        CPU_RESTRICTING_TYPE = 1
 
 
 def restrict_cpus_by_cgroup(count):
@@ -103,7 +104,7 @@ def clean_cgroup():
         raise Exception("Cgreate failed due to:" +
                         cgdelete_result.stdout.decode('utf-8'))
 
-                        
+
 def start_db_bench(db_bench_exec, db_path, options={}, cgroup={}, perf={}):
     """
     Starting the db_bench thread by subprocess.popen(), return the Popen object
@@ -181,7 +182,7 @@ class DB_TASK:
         self.cpu_cores = copy.deepcopy(cpu_cores)
 
     def run(self, gap=10):
-        restrict_cpus(self.cpu_cores,1)
+        restrict_cpus(self.cpu_cores, CPU_RESTRICTING_TYPE)
         self.parameter_list["max_background_compactions"] = self.cpu_cores
         # print("db task parameters:",self.parameter_list)
 
@@ -256,7 +257,8 @@ class DB_launcher:
                         print(target_dir, "existing files")
                     else:
                         temp_para_dict.update(self.options)
-                        print("Task prepared:\t", cpu_count, "CPUs\t", memory_budget/(1024*1024), "MB Memory budget")
+                        print("Task prepared:\t", cpu_count, "CPUs\t",
+                              memory_budget/(1024*1024), "MB Memory budget")
                         job = DB_TASK(temp_para_dict,
                                       DEFAULT_DB_BENCH, target_dir, cpu_count)
                         self.db_bench_tasks.append(job)

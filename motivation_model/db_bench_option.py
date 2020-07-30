@@ -9,6 +9,11 @@ default_cfg.read("default.ini")
 SUDO_PASSWD = default_cfg.get("Permission","passwd")
 DEFAULT_DB_BENCH = default_cfg.get("Paths","db_bench_path")
 
+CPU_RESTRICTING_TYPE = int(default_cfg.get("CPU","limit_type"))
+
+print("config loaded")
+print("CPU limiting type :", CPU_RESTRICTING_TYPE)
+
 # default Memory parameter
 DEFAULT_MEMTABLE_SIZE = 64 * 1024 * 2014  # 256M, memtable size
 DEFAULT_IMMU_COUNT = 2  # how many immutable tables

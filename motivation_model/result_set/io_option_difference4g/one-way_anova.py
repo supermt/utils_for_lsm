@@ -1,3 +1,6 @@
+import scipy.stats as stats
+import researchpy as rp
+
 from traversal import *
 import sqlite3
 import plotly.express as px
@@ -44,40 +47,13 @@ def legend_sorter(x, y):
         return x < y
 
 
-def plot_by_io_option(io_option):
+def anova_one_option(io_option):
     df = pd.read_sql_query(
         "SELECT * FROM speed_results where io_option = '%s' and cpu != '1CPU' " % io_option, db_conn)
 
-    legends = df["io_option_value"].unique()
-    legends = sorted(legends, key=cmp_to_key(legend_sorter))
+    print("one way ANOVA in : " + io_option)
 
-    fig = px.bar(df, x="cpu", y="IOPS", color="io_option_value", barmode="group",
-                 facet_col="io_option",
-                 facet_row="media",
-                 category_orders={
-                     "cpu": cpu_group,
-                     "batch_size": batch_size_group,
-                     "media": media,
-                     "io_option_value": legends
-                 },
-                 labels={"cpu": "", "IOPS": "Throughput (OPs/sec)"},
-                 #  color_discrete_map=batch_size_to_color_map
-                 )
-    fontsize = 20
-
-    fig.update_layout(
-        autosize=False,
-        width=1600,
-        height=900,
-        font=dict(size=fontsize),
-        plot_bgcolor='white',
-    )
-    fig.update_yaxes(automargin=True)
-    fig.update_xaxes(showgrid=False)
-    # fig.show()
-    fig_name = "image/%s.pdf" % io_option
-    print("plotting fig %s finished" % fig_name)
-    fig.write_image(fig_name)
+    print(df.describe())
 
 
 if __name__ == "__main__":
@@ -95,7 +71,7 @@ if __name__ == "__main__":
         sql_sentence = insert_sql_head + "(" + sql_data_row + ")"
         db_conn.execute(sql_sentence)
 
-    print("DB Loaded")                                                          
+    print("DB Loaded")
 
     cursor = db_conn.cursor()
 
@@ -118,7 +94,6 @@ if __name__ == "__main__":
     io_options = pd.read_sql_query(
         "SELECT io_option FROM speed_results group by io_option ", db_conn)
 
-    for io_option in io_options["io_option"]:
-        plot_by_io_option(io_option)
-        
-    # plot_by_io_option("block_size")
+    # for io_option in io_options["io_option"]:
+    #     anova_one_option(io_option)
+    anova_one_option("block_size")
