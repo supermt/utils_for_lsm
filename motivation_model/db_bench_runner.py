@@ -44,8 +44,11 @@ def restrict_cpus_by_cgroup(count):
     for result_string in result_strings:
         if "cpu.cfs_period_us" in result_string:
             cpu_period_time = int(result_string.split(" ")[1])
-
-    print(cpu_period_time)
+    cpu_period_time = cpu_period_time
+    print("CPU period time is %d ms" %cpu_period_time)
+    cgset_result = subprocess.run(
+        ['cgset', '-r', 'cpu.cfs_period_us='+str(cpu_period_time), CGROUP_NAME], stdout=subprocess.PIPE)
+    
     cgset_result = subprocess.run(
         ['cgset', '-r', 'cpu.cfs_quota_us='+str(count*cpu_period_time), CGROUP_NAME], stdout=subprocess.PIPE)
 
