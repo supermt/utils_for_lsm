@@ -94,7 +94,7 @@ def tuning_strategy_l0_equals_l1(parameter_list):
     parameter_list["max_bytes_for_level_base"] = int(parameter_list["write_buffer_size"]) * int(parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 
 def basic_tuning(parameter_list):
-    parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"])
+    # parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"])
     # int(parameter_list["write_buffer_size"]) * int(
         # parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 

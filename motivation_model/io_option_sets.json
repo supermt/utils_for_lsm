@@ -32,6 +32,7 @@
         "advise_random_on_open":[true,false],
         "enable_pipelined_write":[true,false],
         "compaction_style":[0,1,2],
-        "disable_wal":[true,false]
+        "disable_wal":[true,false],
+        
     }
 }
