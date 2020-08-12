@@ -1,0 +1,53 @@
+Cannot parse compression type '/home/supermt/rockdb_ssd'
+Initializing RocksDB Options from the specified file
+Initializing RocksDB Options from command-line flags
+Keys:       16 bytes each
+Values:     1024 bytes each (512 bytes after compression)
+Entries:    53710937
+Prefix:    0 bytes
+Keys per prefix:    0
+RawSize:    53271.7 MB (estimated)
+FileSize:   27045.6 MB (estimated)
+Write rate: 0 bytes/second
+Read rate: 0 ops/second
+Compression: Snappy
+Compression sampling rate: 0
+Memtablerep: skip_list
+Perf Level: 1
+------------------------------------------------
+Initializing RocksDB Options from the specified file
+Initializing RocksDB Options from command-line flags
+DB path: [/home/supermt/rockdb_ssd]
+creating certain distributed workloadscreating certain distributed workloadscreating certain distributed workloads
+
+
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloadscreating certain distributed workloads
+
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+creating certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+Sorting the certain distributed workloads
+fillpoisson  :      76.162 micros/op 210034 ops/sec;  208.3 MB/s

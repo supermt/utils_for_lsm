@@ -1,0 +1,1 @@
+ERROR: illegal value '/media/supermt/hdd/rocksdb' specified for int32 flag 'threads'
