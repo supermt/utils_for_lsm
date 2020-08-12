@@ -61,6 +61,7 @@ ori_parameter_list = {
     "subcompactions": 1,  # How many subcompactions will be applied to L0 Compaction
 }
 
+
 def load_config_file(filename='template.json'):
     f = open(filename,) 
     return json.load(f)
@@ -87,6 +88,15 @@ def set_parameters_to_env(cfg,env):
         print("All parameter loaded")
 
 
+def dual_option_optimizes(parameter_list):
+    # this function is used to set the options that has influence between each others, some options may depend on another option to be triggered.
+    if 'use_cuckoo_table' in parameter_list:
+        parameter_list['mmap_write']=True
+        parameter_list['mmap_read']=True 
+    if 'use_hash_search' in parameter_list:
+        parameter_list['prefix_size']=4
+
+
 def tuning_strategy_l0_equals_l1(parameter_list):
     # parameter_list["max_bytes_for_level_base"] = int(parameter_list["target_file_size_base"]) * 10
     # parameter_list["min_write_buffer_number_to_merge"] = int(parameter_list["max_bytes_for_level_base"] / int(
@@ -94,7 +104,9 @@ def tuning_strategy_l0_equals_l1(parameter_list):
     parameter_list["max_bytes_for_level_base"] = int(parameter_list["write_buffer_size"]) * int(parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 
 def basic_tuning(parameter_list):
+    dual_option_optimizes(parameter_list)
     # parameter_list["target_file_size_base"] = int(parameter_list["write_buffer_size"])
+    pass
     # int(parameter_list["write_buffer_size"]) * int(
         # parameter_list["min_write_buffer_number_to_merge"]) * int(parameter_list["level0_file_num_compaction_trigger"])
 

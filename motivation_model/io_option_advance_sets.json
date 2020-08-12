@@ -203,9 +203,6 @@
             400,
             1600
         ],
-        "merge_operator": [
-            ""
-        ],
         "min_level_to_compress": [
             -1,
             1,
@@ -240,10 +237,6 @@
             false
         ],
         "pin_l0_filter_and_index_blocks_in_cache": [
-            true,
-            false
-        ],
-        "pin_slice": [
             true,
             false
         ],
@@ -287,10 +280,6 @@
             429496729,
             42949672960
         ],
-        "readonly": [
-            true,
-            false
-        ],
         "reads": [
             -1
         ],
@@ -319,16 +308,11 @@
             6871947673,
             687194767360
         ],
-        "stats_interval": [
-            0,
-            2,
-            4,
-            8
-        ],
         "table_cache_numshardbits": [
             4,
+	    8,
             16,
-            64
+            20
         ],
         "target_file_size_base": [
             67108864,
@@ -356,10 +340,6 @@
             true,
             false
         ],
-        "use_clock_cache": [
-            true,
-            false
-        ],
         "use_cuckoo_table": [
             true,
             false
@@ -369,10 +349,6 @@
             false
         ],
         "use_direct_reads": [
-            true,
-            false
-        ],
-        "use_existing_db": [
             true,
             false
         ],
