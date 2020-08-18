@@ -1,5 +1,6 @@
 import subprocess
 import time
+import os.path
 
 FIO_COMMAND = "fio"
 
@@ -11,8 +12,6 @@ FIO_COMMAND = "fio"
 # 5. directIO or bufferedIO
 #
 # fixed parameters:
-# 1. runtime = 60
-# 2. filename=test.file
 # 3. operation: write, randomwrite
 
 
@@ -50,13 +49,17 @@ def para_dict_to_list(para_dict):
 
 def function_fio_runner(job_list):
     for job in job_list:
-        time.sleep(60)
         result_name = para_to_filename(job)
+        print(result_name)
+        if os.path.isfile(result_name[:-1]+".txt"):
+           print("file exists, skip the test")
+           continue
         with open(result_name[:-1]+".txt", "w") as out:
             bootstrap_list = [FIO_COMMAND]
             bootstrap_list.extend(para_dict_to_list(job))
             out.write(para_to_string(bootstrap_list))
             subprocess.run(bootstrap_list, stdout=out)
+            time.sleep(60)
     # return fio_process
 # fio -filename="test.file" -direct=1 -iodepth 1 -rw=randwrite -ioengine=psync -bs=16k -size=10G -numjobs=1 -runtime=60 -group_reporting -group_reporting -name=rw_test
 # fio -filename=/home/jinghuan/rocksdb_nvme/fiotest -block_size=16k -ioengine=libaio -numjobs=2 -iodepth=16 -direct=1 -rw=randwrite -name=baseline_scanning -group_reporting -runtime=60 -size=10G
@@ -81,7 +84,7 @@ def generate_para_group(op_type):
         "filename": ["/home/jinghuan/rocksdb_nvme/fiotest", "/home/jinghuan/rocksdb_hdd/fiotest", "/home/jinghuan/rocksdb_ssd/fiotest"],
         "bs": ["4k", "16k", "64k"],
         "ioengine": ["psync", "libaio"],
-        "numjobs": [1],
+        "numjobs": [1,4,16],
         "iodepth": [1, 16, 32, 64, 256],
         # "direct": [0, 1]
     }
@@ -113,7 +116,7 @@ def generate_para_group(op_type):
                                      "numjobs": numjobs, "iodepth": iodepth}
                         temp_para.update(fixed_para)
                         para_dict_list.append(temp_para)
-
+    print(len(para_dict_list))
     return para_dict_list
 
 

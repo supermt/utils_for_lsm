@@ -5,6 +5,7 @@ import pandas as pd
 import glob
 
 SPPED_LINE_INDEX = -5
+DISK_LINE_INDEX = -2
 SPEED_MBPS_INDEX = 4
 
 DIR_PREFIX = "PersonalServer/"
@@ -20,20 +21,29 @@ def get_speed_from_filelines(filelines):
     # return result
 
 
+def get_disk_util_from_flielines(filelines):
+    disk_line = filelines[DISK_LINE_INDEX]
+    disk_util = disk_line.split(" ")[-1]
+    # print(disk_util)
+    disk_util = disk_util.replace("util=","").replace("%","")
+    return disk_util
+
+
 def extract_file(filename):
     filelines = open(filename).readlines()
     # print(len(filelines))
     speed_numeric_string = get_speed_from_filelines(filelines)
+    disk_util = get_disk_util_from_flielines(filelines)
 
     # pharse the filename to a parameter list
     filename = filename.split("/")[-1]
     filename = filename.replace(".txt", "")
     para_list = filename.split("_")
 
-    return para_list, speed_numeric_string
+    return para_list, speed_numeric_string, disk_util
 
 
-def para_list_to_record_row(para_list, speed):
+def para_list_to_record_row(para_list, speed, disk_util):
     insert_sql = "INSERT INTO %s VALUES (" % TABLE_NAME
 
     int_values = [1, 2, 4]
@@ -43,8 +53,10 @@ def para_list_to_record_row(para_list, speed):
         else:
             insert_sql += "'%s'," % para_list[i]
 
-    insert_sql += speed
+    insert_sql += speed +","
+    insert_sql += disk_util
     insert_sql += ")"
+    print(insert_sql)
     return insert_sql
 
 
@@ -54,7 +66,7 @@ def create_data_table(conn):
     # op,iodepth,numjobs,ioengine,bs,media
     c.execute("Drop Table if exists %s" % TABLE_NAME)
     c.execute("CREATE TABLE %s (workload text, iodepth int, numjobs int, ioengine text, bs int, media," % TABLE_NAME +
-              "MBPS REAL" +
+              "MBPS REAL," + "diskutil REAL"
               ")")
     conn.commit()
 
@@ -75,20 +87,19 @@ if __name__ == "__main__":
     create_data_table(db_conn)
     for file in file_list:
         print("loading file %s" % file)
-        para_list, speed = extract_file(file)
-        sql_query = para_list_to_record_row(para_list, speed)
+        para_list, speed, disk_util = extract_file(file)
+        sql_query = para_list_to_record_row(para_list, speed, disk_util)
         db_conn.execute(sql_query)
     print("table loaded")
 
     df = pd.read_sql_query("SELECT * from %s" % TABLE_NAME, db_conn)
 
-    print(type(df))
-
-    media=["hdd", "ssd", "nvme"]
+    print(df)
+    media = ["hdd", "ssd", "nvme"]
     media_label_map = {
-        "hdd":"SATA HDD",
-        "ssd":"SATA SSD",
-        "nvme":"NVMe SSD"
+        "hdd": "SATA HDD",
+        "ssd": "SATA SSD",
+        "nvme": "NVMe SSD"
     }
 
     workloads = ['randwrite', 'write']
@@ -99,17 +110,17 @@ if __name__ == "__main__":
         fig_name = workload
         df = pd.read_sql_query(
             "SELECT iodepth,ioengine,bs,media,MBPS FROM %s where workload = '%s'" % (TABLE_NAME, workload), db_conn)
-    
-        fig = px.bar(df.replace({'media':media_label_map}), x="iodepth", y="MBPS", barmode="group", facet_row="ioengine", facet_col="bs",
+
+        fig = px.bar(df.replace({'media': media_label_map}), x="iodepth", y="MBPS", barmode="group", facet_row="ioengine", facet_col="bs",
                      color="media",
                      category_orders={
-                         #  "iodepth":[1, 16, 32, 64, 256],
+                         "iodepth": [1, 16, 32, 64, 256],
                          "media": list(media_label_map.values()),
                          "bs": [4, 16, 64]
-                     },
-                     labels={
+        },
+            labels={
                          "bs": "block size (KB)", "MBPS": "Throughput (MB/s)", "media": "Storage Device", "iodepth": "iodepth"}
-                     )
+        )
         fontsize = 24
         fig.update_layout(
             autosize=False,
